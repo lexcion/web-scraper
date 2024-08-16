@@ -273,7 +273,7 @@ def parse_live_lines(driver, maincol, mainrow):
                 #window_size = driver.get_window_size()
                 pyautogui.click()
                 print("Clicked at the bottom-right corner to load more rows")
-                time.sleep(0.5)
+                time.sleep(0.05)
 
                 # Check if new rows have been loaded
                 hasnewrow = False
@@ -285,7 +285,7 @@ def parse_live_lines(driver, maincol, mainrow):
                         
                 tries += 1
                 
-                if (hasnewrow==False and tries > 0):
+                if (hasnewrow==False):
                     print("No new rows loaded, finishing up")
                     break  # Exit if no new rows were loaded
 
