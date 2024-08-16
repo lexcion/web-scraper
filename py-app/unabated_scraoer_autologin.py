@@ -52,7 +52,7 @@ def scrape_homepage(driver,sport,quarter_type,bet_type,date):
 
         # Iterate through each row in the pinned left columns
         row_index = 0
-        while True:
+        while row_index < 100:
             if logged_in(driver) == False:
                     break
             try:
@@ -158,14 +158,14 @@ def scrape_live(driver,sport,quarter_type,bet_type,date):
         center_container = driver.find_element(By.CSS_SELECTOR, 'div.ag-center-cols-container')
 
         row_index = 0
-        while True:
+        while row_index<100:
             
             try:
                 # Locate each row by row index
                 row = center_container.find_element(By.CSS_SELECTOR, f'div[row-index="{row_index}"]')
                 
                 col_index = 5
-                while True:
+                while col_index < 100:
                     try:
                         # Locate each cell by col index
                         cell = row.find_element(By.CSS_SELECTOR, f'div[aria-colindex="{col_index}"]')
@@ -238,7 +238,8 @@ def parse_live_lines(driver, maincol, mainrow):
 
         tries = 0
         
-        while True:
+        while tries < 100:
+            tries+=1
             try:
                 # Locate all rows in the center container
                 rows = center_container.find_elements(By.CSS_SELECTOR, 'div[role="row"]')
