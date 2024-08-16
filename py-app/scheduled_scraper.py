@@ -16,7 +16,6 @@ def run_main():
 
     # Terminate the thread after 2 hours
     if thread.is_alive():
-        # It's not possible to directly terminate a thread, so you can use a flag or process-based approach.
         print("Terminating and restarting...")
         # Reload the module to reset its state
         importlib.reload(unabated_scraper)
