@@ -1,11 +1,8 @@
-import schedule
 import time
 import threading
 import importlib
 from pynput import keyboard
 import os
-import signal
-import sys
 import subprocess
 
 # Flag to control pausing and stopping
@@ -19,10 +16,10 @@ def run_main():
     thread = threading.Thread(target=unabated_scraper.main)
     thread.start()
 
-    # Wait for 2 hours (7200 seconds)
-    time.sleep(7200)
+    # Wait for 1 hour (3600 seconds)
+    time.sleep(3600)
 
-    # Terminate the thread after 2 hours if not paused
+    # Terminate the thread after 1 hour if it's still running
     if thread.is_alive():
         print("Terminating and restarting...")
         unabated_scraper.stop_event.set()
@@ -30,10 +27,10 @@ def run_main():
         importlib.reload(unabated_scraper)
 
 def job():
-    if not pause_flag.is_set():
-        run_main()
+    while True:
+        if not pause_flag.is_set():
+            run_main()
 
-# Function to handle key presses
 def on_press(key):
     try:
         if key.char == 'p':
@@ -44,7 +41,6 @@ def on_press(key):
         pass
 
 def kill_all_related_processes():
-    # Kill all Python processes, Selenium Chrome drivers, and Google Chrome windows
     if os.name == 'nt':  # Windows
         subprocess.call("taskkill /F /IM python.exe", shell=True)
         subprocess.call("taskkill /F /IM chromedriver.exe", shell=True)
@@ -61,7 +57,6 @@ def kill_all_related_processes():
         subprocess.call("pkill chromedriver", shell=True)
         subprocess.call("pkill chrome", shell=True)
 
-# Start the key listener in a separate thread
 def start_key_listener():
     with keyboard.Listener(on_press=on_press) as listener:
         listener.join()
@@ -71,13 +66,5 @@ key_listener_thread = threading.Thread(target=start_key_listener)
 key_listener_thread.daemon = True
 key_listener_thread.start()
 
-# Run the task immediately
+# Run the job continuously
 job()
-
-# Schedule the job to run every 2 hours
-schedule.every(2).hours.do(job)
-
-# Keep the script running to continue scheduling
-while True:
-    schedule.run_pending()
-    time.sleep(1)

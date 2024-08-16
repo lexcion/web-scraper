@@ -612,134 +612,145 @@ def time_limited_execution(limit_seconds=3600):
     time.sleep(limit_seconds)
     print(f"Time limit of {limit_seconds/3600} hours reached. Restarting program...")
     restart_program()
+    
+stop_event = threading.Event()
+
 def main():
-    global pause_flag
-    suppress_print = True  # Set to True to suppress print statements
+    while not stop_event.is_set():
+        global pause_flag
+        suppress_print = True  # Set to True to suppress print statements
 
-    sport = "nba"
-    bet_type = "spread"
-    quarter_type = "q4"
-    email = "chunkmonkey1303@gmail.com"
-    password = "Chunkmonkey1303!"
-    total_days_to_scan = 10000
-    scanned_days = 0
-    months_scan = 9
-    month_position = 0
+        sport = "nba"
+        bet_type = "spread"
+        quarter_type = "q4"
+        email = "chunkmonkey1303@gmail.com"
+        password = "Chunkmonkey1303!"
+        total_days_to_scan = 10000
+        scanned_days = 0
+        months_scan = 9
+        month_position = 0
 
-    #threading.Thread(target=pause_listener, daemon=True).start()
-    #threading.Thread(target=time_limited_execution, args=(3600,), daemon=True).start()  # Set to 1 hour (3600 seconds)
+        #threading.Thread(target=pause_listener, daemon=True).start()
+        #threading.Thread(target=time_limited_execution, args=(3600,), daemon=True).start()  # Set to 1 hour (3600 seconds)
 
-    def safe_print(*args, **kwargs):
-        if not suppress_print:
-            print(*args, **kwargs)
+        def safe_print(*args, **kwargs):
+            if not suppress_print:
+                print(*args, **kwargs)
 
-    try:
-        while months_scan - month_position >= 0 and scanned_days < total_days_to_scan:
-            driver = initialize_scraper()
-            driver.maximize_window()
+        try:
+            while months_scan - month_position >= 0 and scanned_days < total_days_to_scan:
+                driver = initialize_scraper()
+                driver.maximize_window()
 
-            try:
-                driver.get("https://unabated.com/api/auth/login?returnTo=/nba/odds")
-                time.sleep(1)
+                try:
+                    driver.get("https://unabated.com/api/auth/login?returnTo=/nba/odds")
+                    time.sleep(1)
 
-                login(driver, email, password)
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, 'react-datepicker__input-container'))
-                )
+                    login(driver, email, password)
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, 'react-datepicker__input-container'))
+                    )
 
-                select_market(driver, bet_type)
-                time.sleep(1)
+                    select_market(driver, bet_type)
+                    time.sleep(1)
 
-                for _ in range(months_scan - month_position):
-                    go_to_prev_month(driver)
-                    time.sleep(0.2)
+                    for _ in range(months_scan - month_position):
+                        go_to_prev_month(driver)
+                        time.sleep(0.2)
 
-                while scanned_days < total_days_to_scan:
-                    try:
-                        while pause_flag:
-                            time.sleep(1)
-
-                        if not logged_in(driver):
-                            driver.quit()
-                            break
-
-                        safe_print(f"Scanning for available days in month {month_position}...")
-
-                        date_picker_input = WebDriverWait(driver, 10).until(
-                            EC.presence_of_element_located((By.CSS_SELECTOR, 'input.datepicker.form-control.datepicker-container'))
-                        )
-                        current_date = date_picker_input.get_attribute('value')
-                        current_month = current_date.split('/')[0]
-                        date = current_date.replace("/", "-")
-                        safe_print(f"Current month: {current_month}")
-
-                        available_days = get_available_days(driver)
-
-                        for day in available_days:
-                            if not logged_in(driver):
-                                break
-
-                            if scanned_days >= total_days_to_scan:
-                                break
-
-                            try:
-                                while pause_flag:
-                                    time.sleep(1)
-
-                                safe_print(f"Processing day: {day}")
-                                change_date(driver, day)
-
-                                current_date = driver.find_element(By.CSS_SELECTOR, 'input.datepicker.form-control.datepicker-container').get_attribute('value')
-                                date = current_date.replace("/", "-")
-
-                                merged_csv_path = f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
-
-                                if os.path.exists(merged_csv_path) and os.path.getsize(merged_csv_path) > 50 * 1024:
-                                    safe_print(f"Skipping day {day} because {merged_csv_path} is already processed and larger than 50 KB.")
-                                    continue
-
-                                scrape_homepage(driver, sport, quarter_type, bet_type, date)
-
-                                if not logged_in(driver):
-                                    break
-
-                                scrape_live(driver, sport, quarter_type, bet_type, date)
-
-                                if not logged_in(driver):
-                                    break
-
-                                merge_info(
-                                    live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv',
-                                    pregame_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/pregame/pregame_{sport}_{quarter_type}_{bet_type}_{date}.csv',
-                                    output_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
-                                )
-
-                                scanned_days += 1
-
-                            except StaleElementReferenceException as e:
-                                safe_print(f"StaleElementReferenceException encountered. Retrying...")
+                    while scanned_days < total_days_to_scan:
+                        try:
+                            while pause_flag:
                                 time.sleep(1)
 
-                        if scanned_days < total_days_to_scan:
-                            go_to_next_month(driver)
-                            month_position += 1
+                            if not logged_in(driver):
+                                driver.quit()
+                                break
 
-                    except Exception as e:
-                        safe_print(f"Exception detected: {e}.")
-                        break
+                            safe_print(f"Scanning for available days in month {month_position}...")
 
-            except Exception as e:
-                safe_print(f"Crash Detected. Restarting: {e}.")
-                continue
+                            date_picker_input = WebDriverWait(driver, 10).until(
+                                EC.presence_of_element_located((By.CSS_SELECTOR, 'input.datepicker.form-control.datepicker-container'))
+                            )
+                            current_date = date_picker_input.get_attribute('value')
+                            current_month = current_date.split('/')[0]
+                            date = current_date.replace("/", "-")
+                            safe_print(f"Current month: {current_month}")
 
-            finally:
-                driver.quit()
+                            available_days = get_available_days(driver)
 
-    except KeyboardInterrupt:
-        safe_print("KeyboardInterrupt detected. Exiting the program...")
+                            for day in available_days:
+                                if not logged_in(driver):
+                                    break
 
-    finally:
-        kill_chrome_processes()  # Ensure all Chrome processes are terminated when exiting
+                                if scanned_days >= total_days_to_scan:
+                                    break
 
+                                try:
+                                     # Periodically check if stop is requested
+                                    if stop_event.is_set():
+                                        print("Stopping scraper...")
+                                        driver.quit()
+                                        kill_chrome_processes() 
+                                        break
+                                    while pause_flag:
+                                        time.sleep(1)
+
+                                    safe_print(f"Processing day: {day}")
+                                    change_date(driver, day)
+
+                                    current_date = driver.find_element(By.CSS_SELECTOR, 'input.datepicker.form-control.datepicker-container').get_attribute('value')
+                                    date = current_date.replace("/", "-")
+
+                                    merged_csv_path = f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
+
+                                    if os.path.exists(merged_csv_path) and os.path.getsize(merged_csv_path) > 50 * 1024:
+                                        safe_print(f"Skipping day {day} because {merged_csv_path} is already processed and larger than 50 KB.")
+                                        continue
+
+                                    scrape_homepage(driver, sport, quarter_type, bet_type, date)
+
+                                    if not logged_in(driver):
+                                        break
+
+                                    scrape_live(driver, sport, quarter_type, bet_type, date)
+
+                                    if not logged_in(driver):
+                                        break
+
+                                    merge_info(
+                                        live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv',
+                                        pregame_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/pregame/pregame_{sport}_{quarter_type}_{bet_type}_{date}.csv',
+                                        output_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
+                                    )
+
+                                    scanned_days += 1
+
+                                except StaleElementReferenceException as e:
+                                    safe_print(f"StaleElementReferenceException encountered. Retrying...")
+                                    time.sleep(1)
+
+                            if scanned_days < total_days_to_scan:
+                                go_to_next_month(driver)
+                                month_position += 1
+
+                        except Exception as e:
+                            safe_print(f"Exception detected: {e}.")
+                            break
+
+                except Exception as e:
+                    safe_print(f"Crash Detected. Restarting: {e}.")
+                    continue
+
+                finally:
+                    driver.quit()
+
+        except KeyboardInterrupt:
+            safe_print("KeyboardInterrupt detected. Exiting the program...")
+
+        finally:
+            kill_chrome_processes()  # Ensure all Chrome processes are terminated when exiting
+    print("Scraper has stopped.")
+    
 if __name__ == "__main__":
     main()
