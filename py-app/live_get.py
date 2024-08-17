@@ -42,8 +42,9 @@ def scrape_homepage(driver,sport,quarter_type,bet_type,date):
         '4': 'col_4'
     }
     column_titles = {}  # To store the column titles found
-
+    
     try:
+        time.sleep(1)
         # Wait until the page loads and an element we are interested in is present
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.ag-pinned-left-cols-container')))
         
@@ -621,13 +622,13 @@ def main():
         suppress_print = True  # Set to True to suppress print statements
 
         sport = "nba"
-        bet_type = "ml"
+        bet_type = "spread"
         quarter_type = "q4"
         email = "chunkmonkey1303@gmail.com"
         password = "Chunkmonkey1303!"
         total_days_to_scan = 10000
         scanned_days = 0
-        months_scan = 7
+        months_scan = 10
         month_position = 0
 
         #threading.Thread(target=pause_listener, daemon=True).start()
@@ -705,6 +706,9 @@ def main():
                                     live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv'
                                     merged_csv_path = f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
 
+                                    
+                                    
+                                    
                                     if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
                                         safe_print(f"Skipping day {day} because {live_path} is already processed and larger than 50 KB.")
                                         continue
@@ -718,13 +722,13 @@ def main():
 
                                     if not logged_in(driver):
                                         break
-
+                                    '''
                                     merge_info(
                                         live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv',
                                         pregame_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/pregame/pregame_{sport}_{quarter_type}_{bet_type}_{date}.csv',
                                         output_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
                                     )
-
+                                    '''
                                     scanned_days += 1
 
                                     if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
