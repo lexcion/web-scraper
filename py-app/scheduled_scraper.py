@@ -17,7 +17,7 @@ def run_main():
     thread.start()
 
     # Wait for 1 hour (3600 seconds)
-    time.sleep(3600)
+    time.sleep(999999)
 
     # Terminate the thread after 1 hour if it's still running
     if thread.is_alive():

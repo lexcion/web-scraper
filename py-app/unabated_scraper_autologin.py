@@ -621,13 +621,13 @@ def main():
         suppress_print = True  # Set to True to suppress print statements
 
         sport = "nba"
-        bet_type = "spread"
+        bet_type = "ml"
         quarter_type = "q4"
         email = "chunkmonkey1303@gmail.com"
         password = "Chunkmonkey1303!"
         total_days_to_scan = 10000
         scanned_days = 0
-        months_scan = 9
+        months_scan = 7
         month_position = 0
 
         #threading.Thread(target=pause_listener, daemon=True).start()
@@ -702,10 +702,11 @@ def main():
                                     current_date = driver.find_element(By.CSS_SELECTOR, 'input.datepicker.form-control.datepicker-container').get_attribute('value')
                                     date = current_date.replace("/", "-")
 
+                                    live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv'
                                     merged_csv_path = f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
 
-                                    if os.path.exists(merged_csv_path) and os.path.getsize(merged_csv_path) > 50 * 1024:
-                                        safe_print(f"Skipping day {day} because {merged_csv_path} is already processed and larger than 50 KB.")
+                                    if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
+                                        safe_print(f"Skipping day {day} because {live_path} is already processed and larger than 50 KB.")
                                         continue
 
                                     scrape_homepage(driver, sport, quarter_type, bet_type, date)
@@ -726,13 +727,19 @@ def main():
 
                                     scanned_days += 1
 
+                                    if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
+                        
+                                        driver.quit()
+                                        kill_chrome_processes()
+                                        "restarting after processing a day"
+
                                 except StaleElementReferenceException as e:
                                     safe_print(f"StaleElementReferenceException encountered. Retrying...")
                                     time.sleep(1)
 
                             if scanned_days < total_days_to_scan:
                                 go_to_next_month(driver)
-                                month_position += 1
+                                #month_position += 1
 
                         except Exception as e:
                             safe_print(f"Exception detected: {e}.")
