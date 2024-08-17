@@ -214,6 +214,8 @@ def parse_live_lines(driver, maincol, mainrow):
         # Wait until the necessary container is present
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.jsx-619290666')))
         
+        time.sleep(1)
+        
         # Find the main container and the live button
         jsx_container = driver.find_element(By.CSS_SELECTOR, 'div.jsx-619290666')
         live_button = jsx_container.find_element(By.ID, 'buttonGameStatusLive')
@@ -271,15 +273,27 @@ def parse_live_lines(driver, maincol, mainrow):
                         except Exception as e:
                             print(f"Error parsing row {row_index}: {e}")
                             continue
-                
-                # If there are new rows, continue scrolling and trying
-                if len(rows) > len(read_rows):
-                    pyautogui.click()
-                    print("Clicked at the bottom-right corner to load more rows")
-                    time.sleep(0.05)  # Very short delay
-                else:
+           
+                # Click at the bottom-right to load more rows
+                #window_size = driver.get_window_size()
+                pyautogui.click()
+                print("Clicked at the bottom-right corner to load more rows")
+                time.sleep(0.05)
+
+                # Check if new rows have been loaded
+                hasnewrow = False
+                new_rows = center_container.find_elements(By.CSS_SELECTOR, 'div[role="row"]')
+                for row in new_rows:
+                    row_index = int(row.get_attribute('row-index'))
+                    if row_index not in read_rows:
+                        hasnewrow = True
+
+                if (hasnewrow==False):
                     print("No new rows loaded, finishing up")
-                    break
+                    break  # Exit if no new rows were loaded
+
+
+                tries += 1
 
             except Exception as e:
                 print(f"Scroll bar click failed with error: {e}")
@@ -620,7 +634,7 @@ def main():
         password = "Chunkmonkey1303!"
         total_days_to_scan = 10000
         scanned_days = 0
-        months_scan = 9
+        months_scan = 10
         month_position = 0
 
         #threading.Thread(target=pause_listener, daemon=True).start()
