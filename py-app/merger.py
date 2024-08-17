@@ -703,23 +703,6 @@ def main():
                                     current_date = driver.find_element(By.CSS_SELECTOR, 'input.datepicker.form-control.datepicker-container').get_attribute('value')
                                     date = current_date.replace("/", "-")
 
-                                    live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv'
-                                    merged_csv_path = f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
-
-                                    if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
-                                        safe_print(f"Skipping day {day} because {live_path} is already processed and larger than 50 KB.")
-                                        continue
-
-                                    scrape_homepage(driver, sport, quarter_type, bet_type, date)
-
-                                    if not logged_in(driver):
-                                        break
-                                    '''
-                                    scrape_live(driver, sport, quarter_type, bet_type, date)
-
-                                    if not logged_in(driver):
-                                        break
-
                                     merge_info(
                                         live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv',
                                         pregame_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/pregame/pregame_{sport}_{quarter_type}_{bet_type}_{date}.csv',
@@ -727,12 +710,6 @@ def main():
                                     )
 
                                     scanned_days += 1
-
-                                    if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
-                        
-                                        driver.quit()
-                                        kill_chrome_processes()
-                                        "restarting after processing a day"'''
 
                                 except StaleElementReferenceException as e:
                                     safe_print(f"StaleElementReferenceException encountered. Retrying...")

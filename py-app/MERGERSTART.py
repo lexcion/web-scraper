@@ -10,7 +10,7 @@ pause_flag = threading.Event()
 
 def run_main():
     # Import the unabated_scraper_autologin module
-    unabated_scraper = importlib.import_module('homepage_get')
+    unabated_scraper = importlib.import_module('merger')
 
     # Start the main function in a separate thread to handle timing issues
     thread = threading.Thread(target=unabated_scraper.main)
