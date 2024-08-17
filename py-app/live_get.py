@@ -167,6 +167,8 @@ def scrape_live(driver,sport,quarter_type,bet_type,date):
                 
                 col_index = 5
                 while col_index < 100:
+                    if col_index == 5:
+                        time.sleep(2)
                     try:
                         # Locate each cell by col index
                         cell = row.find_element(By.CSS_SELECTOR, f'div[aria-colindex="{col_index}"]')
@@ -194,7 +196,7 @@ def scrape_live(driver,sport,quarter_type,bet_type,date):
         final_df = pd.concat(all_live_data, ignore_index=True)
         
         # Save the final DataFrame to a CSV file
-        final_df.to_csv(f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv', index=False)
+        final_df.to_csv(f'unabated-database/{sport}/{quarter_type}/{bet_type}/live2/live2_{sport}_{quarter_type}_{bet_type}_{date}.csv', index=False)
         print(f"Live lines data saved to live_{sport}_{quarter_type}_{bet_type}_{date}.csv")
 
     except Exception as e:
@@ -205,45 +207,43 @@ def parse_live_lines(driver, maincol, mainrow):
     # Disable PyAutoGUI fail-safe feature
     pyautogui.FAILSAFE = False
 
-    # Function to parse the live lines data
     live_data = []
     read_rows = set()  # To keep track of row indexes that have been read
+
     try:
-        # Wait until the element we are interested in is present
+        # Wait until the necessary container is present
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.jsx-619290666')))
         
-        # Get the container with the class jsx-619290666
-        try:
-            jsx_container = driver.find_element(By.CSS_SELECTOR, 'div.jsx-619290666')
-            print("Found jsx_container")
-        except Exception as e:
-            print(f"Data container not found: {e}")
-            return pd.DataFrame()  # Return an empty DataFrame if the container is not found
-        
-        # Click the button with id="buttonGameStatusLive"
-        try:
-            live_button = jsx_container.find_element(By.ID, 'buttonGameStatusLive')
-            live_button.click()
-            print("Clicked live_button")
-            time.sleep(1)  # Wait for the data to load
-        except Exception as e:
-            print(f"Live button not found or not clickable: {e}")
-            return pd.DataFrame()  # Return an empty DataFrame if the button is not found or not clickable
+        # Find the main container and the live button
+        jsx_container = driver.find_element(By.CSS_SELECTOR, 'div.jsx-619290666')
+        live_button = jsx_container.find_element(By.ID, 'buttonGameStatusLive')
 
-        # Wait until the element we are interested in is present
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.ag-center-cols-container')))
+        # Click the live button
+        live_button.click()
+        print("Clicked live_button")
         
-        # Get the container with all the rows in the center columns
+        time.sleep(1)
+        
+        # Wait until the center columns container is present
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.ag-center-cols-container')))
         center_container = jsx_container.find_element(By.CSS_SELECTOR, 'div.ag-center-cols-container')
         print("Found center_container")
+
+        # Extract the additional content once, before the loop
+        title_element = driver.find_element(By.CSS_SELECTOR, 'div.d-flex.flex-column.align-items-center.px-2')
+        home_team = title_element.find_element(By.CSS_SELECTOR, 'div.h5 span').text
+        away_team = title_element.find_element(By.CSS_SELECTOR, 'div.d-flex.flex-row.align-items-center span:nth-child(2)').text
+        game_time = title_element.find_element(By.CSS_SELECTOR, 'div.d-flex.justify-content-between.align-items-end.w-100 span').text
+        title = title_element.find_element(By.CSS_SELECTOR, 'div[title]').get_attribute('title')
 
         tries = 0
         
         while tries < 100:
-            tries+=1
+            tries += 1
             try:
-                # Locate all rows in the center container
+                
                 rows = center_container.find_elements(By.CSS_SELECTOR, 'div[role="row"]')
+                
                 for row in rows:
                     row_index = int(row.get_attribute('row-index'))
                     if row_index not in read_rows:  # Only process rows that haven't been read
@@ -252,49 +252,40 @@ def parse_live_lines(driver, maincol, mainrow):
                             time_text = row.find_element(By.CSS_SELECTOR, 'div[aria-colindex="1"]').text
                             away_text = row.find_element(By.CSS_SELECTOR, 'div[aria-colindex="2"]').text
                             home_text = row.find_element(By.CSS_SELECTOR, 'div[aria-colindex="3"]').text
-                            available = "Closed" if "line-through" in\
-                                row.find_element(By.CSS_SELECTOR, 'div[aria-colindex="2"]').find_element(By.CSS_SELECTOR, 'span.pr-2').get_attribute("style") else "Open"
-                            
-                            
+                            available = "Closed" if "line-through" in row.find_element(By.CSS_SELECTOR, 'div[aria-colindex="2"] span.pr-2').get_attribute("style") else "Open"
+
                             live_data.append({
                                 "Time": time_text,
                                 "Away": away_text,
                                 "Home": home_text,
                                 "Available": available,
+                                "Home Team": home_team,
+                                "Away Team": away_team,
+                                "Game Time": game_time,
+                                "Bookmaker": title,
                                 "Row": f"row_{mainrow}",
                                 "Column": f"col_{maincol}"
                             })
-                            #print(f"Parsed row {row_index}: Time={time_text}, Away={away_text}, Home={home_text}, Available={available}, Column=col_{maincol}")
+
                             read_rows.add(row_index)  # Mark this row as read
                         except Exception as e:
                             print(f"Error parsing row {row_index}: {e}")
                             continue
                 
-                # Click at the bottom-right to load more rows
-                #window_size = driver.get_window_size()
-                pyautogui.click()
-                print("Clicked at the bottom-right corner to load more rows")
-                time.sleep(0.05)
-
-                # Check if new rows have been loaded
-                hasnewrow = False
-                new_rows = center_container.find_elements(By.CSS_SELECTOR, 'div[role="row"]')
-                for row in new_rows:
-                    row_index = int(row.get_attribute('row-index'))
-                    if row_index not in read_rows:
-                        hasnewrow = True
-                        
-                tries += 1
-                
-                if (hasnewrow==False):
+                # If there are new rows, continue scrolling and trying
+                if len(rows) > len(read_rows):
+                    pyautogui.click()
+                    print("Clicked at the bottom-right corner to load more rows")
+                    time.sleep(0.05)  # Very short delay
+                else:
                     print("No new rows loaded, finishing up")
-                    break  # Exit if no new rows were loaded
+                    break
 
             except Exception as e:
                 print(f"Scroll bar click failed with error: {e}")
                 break
 
-        # Click the button with class="close" to close the data table
+        # Click the close button
         try:
             close_button = driver.find_element(By.CSS_SELECTOR, 'button.close')
             close_button.click()
@@ -309,6 +300,7 @@ def parse_live_lines(driver, maincol, mainrow):
     except Exception as e:
         print(f"An error occurred while parsing live lines: {e}")
         return pd.DataFrame()
+
 
 import pandas as pd
 import os
@@ -628,7 +620,7 @@ def main():
         password = "Chunkmonkey1303!"
         total_days_to_scan = 10000
         scanned_days = 0
-        months_scan = 10
+        months_scan = 9
         month_position = 0
 
         #threading.Thread(target=pause_listener, daemon=True).start()
@@ -703,7 +695,7 @@ def main():
                                     current_date = driver.find_element(By.CSS_SELECTOR, 'input.datepicker.form-control.datepicker-container').get_attribute('value')
                                     date = current_date.replace("/", "-")
 
-                                    live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv'
+                                    live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live2/live2_{sport}_{quarter_type}_{bet_type}_{date}.csv'
                                     merged_csv_path = f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
 
                                     
@@ -713,7 +705,7 @@ def main():
                                         safe_print(f"Skipping day {day} because {live_path} is already processed and larger than 50 KB.")
                                         continue
 
-                                    scrape_homepage(driver, sport, quarter_type, bet_type, date)
+                                    #scrape_homepage(driver, sport, quarter_type, bet_type, date)
 
                                     if not logged_in(driver):
                                         break

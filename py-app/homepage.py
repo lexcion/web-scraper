@@ -628,7 +628,7 @@ def main():
         password = "Chunkmonkey1303!"
         total_days_to_scan = 10000
         scanned_days = 0
-        months_scan = 24
+        months_scan = 29
         month_position = 0
 
         #threading.Thread(target=pause_listener, daemon=True).start()
@@ -705,11 +705,7 @@ def main():
 
                                     live_path=f'unabated-database/{sport}/{quarter_type}/{bet_type}/live/live_{sport}_{quarter_type}_{bet_type}_{date}.csv'
                                     merged_csv_path = f'unabated-database/{sport}/{quarter_type}/{bet_type}/merged/merged_{sport}_{quarter_type}_{bet_type}_{date}.csv'
-
-                                    if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
-                                        safe_print(f"Skipping day {day} because {live_path} is already processed and larger than 50 KB.")
-                                        continue
-
+                                    
                                     scrape_homepage(driver, sport, quarter_type, bet_type, date)
 
                                     if not logged_in(driver):
