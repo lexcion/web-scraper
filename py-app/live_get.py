@@ -9,7 +9,6 @@ import threading
 import keyboard
 import psutil  # Import psutil to manage system processes
 
-import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -152,6 +151,7 @@ def scrape_live(driver,sport,quarter_type,bet_type,date):
     all_live_data = []  # To store all parsed DataFrames
 
     try:
+        time.sleep(1)
         # Wait until the page loads and the element we are interested in is present
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.ag-center-cols-container')))
         
@@ -224,7 +224,10 @@ def parse_live_lines(driver, maincol, mainrow):
         live_button.click()
         print("Clicked live_button")
         
-        time.sleep(1)
+        if (maincol == 5):
+            time.sleep(4)
+        else:
+            time.sleep(1)
         
         # Wait until the center columns container is present
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.ag-center-cols-container')))
@@ -408,6 +411,7 @@ import keyboard  # Import the keyboard module for global key listening
 pause_flag = False
 
 def change_date(driver, day):
+    time.sleep(0.25)
     try:
         print(f"Attempting to change date to: {day}")
         date_picker = WebDriverWait(driver, 10).until(
@@ -622,19 +626,23 @@ def time_limited_execution(limit_seconds=3600):
     
 stop_event = threading.Event()
 
+def logout(driver):
+    driver.get("https://unabated.com/api/auth/logout")
+    time.sleep(2)
+    
 def main():
     while not stop_event.is_set():
         global pause_flag
         suppress_print = True  # Set to True to suppress print statements
 
-        sport = "nba"
+        sport = "ncaab"
         bet_type = "spread"
         quarter_type = "q4"
-        email = "chunkmonkey1303@gmail.com"
-        password = "Chunkmonkey1303!"
+        email = "poopenfarten330@gmail.com"
+        password = "Poopenfarten330!"
         total_days_to_scan = 10000
         scanned_days = 0
-        months_scan = 10
+        months_scan = 9
         month_position = 0
 
         #threading.Thread(target=pause_listener, daemon=True).start()
@@ -650,7 +658,7 @@ def main():
                 driver.maximize_window()
 
                 try:
-                    driver.get("https://unabated.com/api/auth/login?returnTo=/nba/odds")
+                    driver.get("https://unabated.com/api/auth/login?returnTo=/ncaab/odds")
                     time.sleep(1)
 
                     login(driver, email, password)
@@ -659,6 +667,7 @@ def main():
                     )
 
                     select_market(driver, bet_type)
+                    
                     time.sleep(1)
 
                     for _ in range(months_scan - month_position):
@@ -740,6 +749,7 @@ def main():
                                     if os.path.exists(live_path) and os.path.getsize(live_path) > 50 * 1024:
                         
                                         driver.quit()
+                                        logout(driver)
                                         kill_chrome_processes()
                                         "restarting after processing a day"
 
